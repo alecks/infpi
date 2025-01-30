@@ -4,8 +4,10 @@
 
 ## Installation
 
+This command creates your `~/.local` directory where per-user programs are stored, installs infpi to that directory and makes it executable.
+
 ```sh
-curl -L "https://raw.githubusercontent.com/alecks/infpi/refs/heads/main/infpi.sh" -o ~/.local/bin/infpi && chmod +x ~/.local/bin/infpi
+mkdir -p ~/.local/bin && curl -L "https://raw.githubusercontent.com/alecks/infpi/refs/heads/main/infpi.sh" -o ~/.local/bin/infpi && chmod +x ~/.local/bin/infpi
 ```
 
 #### **IMPORTANT**: Add `~/.local/bin` to PATH.
@@ -40,7 +42,7 @@ infpi https://github.com/neovim/neovim/releases/latest/download/nvim-linux-x86_6
 
 ### Uninstalling 
 
-If you wish to uninstall a program, `infpi` writes a log file to `~/.infpi/logs` which you can use to see what was installed. You can then manually delete these files (but be careful not to delete anything shared by other programs).
+If you wish to uninstall a program, infpi writes a log file to `~/.infpi/logs` which you can use to see what was installed. You can then manually delete these files (but be careful not to delete anything shared by other programs).
 
 ## Safety
 
