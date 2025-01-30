@@ -5,7 +5,7 @@
 ## Installation
 
 ```sh
-curl -L "https://raw.githubusercontent.com/alecks/infpi/main/infpi.sh" -o ~/.local/bin/infpi && chmod +x ~/.local/bin/infpi
+curl -L "https://raw.githubusercontent.com/alecks/infpi/refs/heads/main/infpi.sh" -o ~/.local/bin/infpi && chmod +x ~/.local/bin/infpi
 ```
 
 #### **IMPORTANT**: Add `~/.local/bin` to PATH.
