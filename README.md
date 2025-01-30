@@ -40,6 +40,8 @@ Or to download the latest version of [neovim](https://neovim.io):
 infpi https://github.com/neovim/neovim/releases/latest/download/nvim-linux-x86_64.tar.gz
 ```
 
+The script expects the archive to have at least a `bin` directory or at least one executable in the root. In the case that there is a bin directory, the entire archive is copied into your `~/.local` folder. If there isn't, and root executable(s) are found, they are moved to the `~/.local/bin` directory and you will be asked about the rest. 
+
 ### Uninstalling 
 
 If you wish to uninstall a program, infpi writes a log file to `~/.infpi/logs` which you can use to see what was installed. You can then manually delete these files (but be careful not to delete anything shared by other programs).
