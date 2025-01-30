@@ -9,7 +9,7 @@ fi
 infpi_dir=~/.infpi
 temp_dir=${infpi_dir}/temp
 log_dir=${infpi_dir}/logs
-local_dir=~/TESTLOCAL
+local_dir=~/.local
 log_file=${log_dir}/$(basename $1).log
 
 # Ensure necessary directories exist
