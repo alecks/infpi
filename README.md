@@ -24,7 +24,7 @@ This allows you to call programs directly like `my-program` rather than `~/.loca
 
 ## Usage
 
-Copy the URL of a package tarball and run `infpi <url>`. This will download the archive and extract it into the relevant directories, overwriting if there are any changes in existing files.
+Copy the URL of a package tarball and run `infpi <url>`. This will download the archive and extract it into the relevant directories.
 
 For DICE, you are looking for an x86-64 or amd64 Linux tarball.
 
