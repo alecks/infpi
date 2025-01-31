@@ -39,14 +39,15 @@ Or to download the latest version of [neovim](https://neovim.io):
 ```sh
 infpi https://github.com/neovim/neovim/releases/latest/download/nvim-linux-x86_64.tar.gz
 ```
+#### Package structure
 
 The script expects the archive to have at least a `bin` directory or at least one executable in the root. In the case that there is a bin directory, the entire archive is copied into your `~/.local` folder. If there isn't, and root executable(s) are found, they are moved to the `~/.local/bin` directory and you will be asked about the rest. 
+
+#### Overwrites
+
+If there are conflicts, infpi will ask you whether to overwrite **a**ll files (a), select **s**ome files interactively (s), or overwrite **n**one (n).
 
 ### Uninstalling 
 
 If you wish to uninstall a program, infpi writes a log file to `~/.infpi/logs` which you can use to see what was installed. You can then manually delete these files (but be careful not to delete anything shared by other programs).
-
-## Safety
-
-This is designed to aid installation of a small number of programs onto DICE machines, as you usually don't need to install *that* many on top of what is provided. It overwrites everything it can see, so if two programs share the same libraries, it will simply replace the old files with the new ones.
 
