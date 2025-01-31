@@ -10,16 +10,16 @@ fi
 tar_basename=$(basename $1)
 
 infpi_dir=~/.infpi
-temp_dir=${infpi_dir}/temp
+infpi_temp_dir=${infpi_dir}/temp
 log_dir=${infpi_dir}/logs
 local_dir=~/.local
 log_file=${log_dir}/${tar_basename}.log
 
 # Ensure necessary directories exist
-mkdir -p "${temp_dir}" "${local_dir}/bin" "${log_dir}"
+mkdir -p "${infpi_temp_dir}" "${local_dir}/bin" "${log_dir}"
 
 # Generate unique temp names
-temp_tar_name="${temp_dir}/$(head -c 2 /dev/urandom | xxd -p | tr -d '\n')${tar_basename}"
+temp_tar_name="${infpi_temp_dir}/$(head -c 2 /dev/urandom | xxd -p | tr -d '\n')${tar_basename}"
 temp_name="${temp_tar_name}EX"
 
 log() {
@@ -37,6 +37,53 @@ fail() {
     log "ERROR" "$1"
     cleanup
     exit 1
+}
+
+rsync_interactive_overwrite() {
+    local include_only_dirs="$1"
+
+    log "INFO" "Checking for existing files in ${local_dir}"
+
+    # Apply include/exclude only if we’re focusing on directories
+    if [[ "$include_only_dirs" == "true" ]]; then
+        rsync_opts=("--include=*/" "--exclude=*")
+    else
+        rsync_opts=()
+    fi
+
+    # Dry-run rsync to detect files that will be overwritten
+    existing_files=$(rsync ${rsync_opts[@]} -ain --existing "${temp_name}/" "${local_dir}/" | grep "^>f" | awk '{print $2}')
+
+    if [[ -n "$existing_files" ]]; then
+        echo "The following files already exist in ~/.local and the package being installed has different contents:"
+        echo "$existing_files"
+        echo ""
+
+        read -rp "Overwrite All/Some/No files? (a/s/N): " ask_each
+            case "$ask_each" in
+                [Ss])
+                    for file in $existing_files; do
+                        read -rp "Overwrite $file? (y/N): " overwrite
+                        if [[ "$overwrite" =~ ^[Yy]$ ]]; then
+                            mv "${temp_name}/${file}" "${local_dir}/${file}" || return 1
+                            log "INFO" "Overwrote ${file}"
+                        else
+                            log "INFO" "Skipped ${file}"
+                        fi
+                    done
+                    ;;
+                [Aa])
+                    log "INFO" "Overwriting all files without confirmation..."
+                    rsync -a "${rsync_opts[@]}" "${temp_name}/" "${local_dir}/" || return 1
+                    ;;
+                *)
+                    log "INFO" "Skipping all overwrites. Only new files will be copied."
+                    rsync -a --ignore-existing "${rsync_opts[@]}" "${temp_name}/" "${local_dir}/" || return 1
+                    ;;
+            esac
+    else
+        rsync -a "${rsync_opts[@]}" "${temp_name}/" "${local_dir}/" || return 1
+    fi
 }
 
 # Download the file with progress
@@ -95,7 +142,7 @@ if [[ -z "$nearest_bin_dir" ]]; then
                 1)
                     # Only move directories
                     log "INFO" "Moving remaining directories, excluding top-level files, to ~/.local"
-                    rsync -a --include='*/' --exclude='*' "${temp_name}/" "${local_dir}/"
+                    rsync_interactive_overwrite "true" || fail "Failed to merge files"
                     cleanup
                     log "SUCCESS" "Installation complete, copied executables and directories excluding top-level files"
                     exit 0
@@ -128,7 +175,7 @@ fi
 
 log "INFO" "Moving all files to ${local_dir}..."
 
-rsync -a "${temp_name}/" "${local_dir}/" || fail "rsync failed to move files to .local"
+rsync_interactive_overwrite || fail "Failed to merge files"
 
 cleanup
 log "SUCCESS" "Installation complete from $1"
