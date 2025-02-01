@@ -7,7 +7,7 @@ if [[ -z "$1" ]]; then
     exit 1
 fi
 
-tar_basename=$(basename $1)
+tar_basename=$(basename "$1")
 
 infpi_dir=~/.infpi
 infpi_temp_dir=${infpi_dir}/temp
@@ -39,6 +39,15 @@ fail() {
     exit 1
 }
 
+confirm_continue() {
+    read -rp "Continue with installation? (Y/n): " confirm
+    if [[ "$confirm" =~ ^[Nn]$ ]]; then
+        echo "Exiting..."
+        cleanup
+        exit 0
+    fi
+}
+
 rsync_interactive_overwrite() {
     local include_only_dirs="$1"
 
@@ -52,7 +61,7 @@ rsync_interactive_overwrite() {
     fi
 
     # Dry-run rsync to detect files that will be overwritten
-    existing_files=$(rsync ${rsync_opts[@]} -ain --existing "${temp_name}/" "${local_dir}/" | grep "^>f" | awk '{print $2}')
+    existing_files=$(rsync "${rsync_opts[@]}" -ain --existing "${temp_name}/" "${local_dir}/" | grep "^>f" | awk '{print $2}')
 
     if [[ -n "$existing_files" ]]; then
         echo "The following files already exist in ~/.local and the package being installed has different contents:"
@@ -95,10 +104,10 @@ echo ""
 # Extract into temp dir
 mkdir -p "${temp_name}"
 tar -xf "${temp_tar_name}" -C "${temp_name}" || fail "tar failed to extract"
-rm -rf ${temp_tar_name}
+rm -rf "${temp_tar_name}"
 
 echo ""
-tree ${temp_name} | tee -a "${log_file}"
+tree "${temp_name}" | tee -a "${log_file}"
 echo ""
 
 # Find the shallowest bin directory
@@ -111,23 +120,25 @@ if [[ -z "$nearest_bin_dir" ]]; then
     executables=$(find "${temp_name}" -maxdepth 1 -type f -executable)
 
     if [[ -n "${executables}" ]]; then
-        log "INFO" "Moving executables to ~/.local/bin..."
         echo ""
         echo "${executables}" | xargs -I {} basename "{}" | tee -a "${log_file}"
         echo ""
+        echo "-- The executables listed above will be moved to ~/.local."
 
-        mv ${executables} "${local_dir}/bin/" || fail "Failed to move executables to bin"
+        confirm_continue
+
+        log "INFO" "Moving executables to ~/.local/bin..."
+        mv "${executables[@]}" "${local_dir}/bin/" || fail "Failed to move executables to bin"
         log "INFO" "Executables moved to ~/.local/bin"
 
         # Check for anything left over after copying executables. Split into files and dirs.
         remaining_dirs=$(find "${temp_name}" -mindepth 1 -type d 2>/dev/null)
         remaining_files=$(find "${temp_name}" -maxdepth 1 -type f 2>/dev/null)
         if [[ -n "${remaining_files}" || -n "${remaining_dirs}" ]]; then
-            echo "-- There are more files left in the archive that haven't been copied:"
-
             echo ""
             tree "${temp_name}"
             echo ""
+            echo "-- The files remaining in the archive are listed above."
 
             echo "Please choose what you would like to do:"
             echo "-- 1: Move only directories to ~/.local, excluding top-level files (recommended)"
@@ -172,6 +183,9 @@ if [[ -z "$nearest_bin_dir" ]]; then
         fail "No bin directory or executables found in archive: $1"
     fi
 fi
+
+echo "-- The files listed above will be moved to ~/.local."
+confirm_continue
 
 log "INFO" "Moving all files to ${local_dir}..."
 
