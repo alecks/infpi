@@ -48,6 +48,13 @@ confirm_continue() {
     fi
 }
 
+dirtree() {
+    echo ""
+    tree --noreport -ad "$1"
+    tree -aL 1 "$1"
+    echo ""
+}
+
 rsync_interactive_overwrite() {
     local include_only_dirs="$2"
     local in_dir="$1"
@@ -111,22 +118,22 @@ tar -xf "${temp_tar_name}" -C "${temp_name}" || fail "tar failed to extract"
 rm -rf "${temp_tar_name}"
 
 echo ""
-tree "${temp_name}" | tee -a "${log_file}"
+dirtree "$temp_name" | tee -a "${log_file}"
 echo ""
 
 # Find the shallowest bin directory
 nearest_bin_dir=$(find "${temp_name}" -type d -name bin | head -n 1 | sed 's:/bin$::')
 
-# If no bin dir is found, look for executables in the root
 if [[ -n "$nearest_bin_dir" ]]; then
-    tree "$nearest_bin_dir"
-    echo ""
+    echo "Assuming this is the directory to be moved to .local:"
+    dirtree "$nearest_bin_dir"
+
     # TODO: Allow moving all files, not just directories.
     echo "-- A bin directory was found. The DIRECTORIES listed above will be moved to ~/.local."
     confirm_continue
 
     rsync_interactive_overwrite "$nearest_bin_dir" "true" || fail "Failed to merge files"
-    log "INFO" "Top-level directories moved to ~/.local."
+    log "INFO" "Directories moved to ~/.local. Top-level files have not been moved."
 else
     log "INFO" "No bin directory found, checking for executables..."
     
@@ -149,7 +156,7 @@ else
         remaining_files=$(find "${temp_name}" -maxdepth 1 -type f 2>/dev/null)
         if [[ -n "${remaining_files}" || -n "${remaining_dirs}" ]]; then
             echo ""
-            tree "${temp_name}"
+            dirtree "${temp_name}"
             echo ""
             echo "-- The files remaining in the archive are listed above."
 
