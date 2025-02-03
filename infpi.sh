@@ -52,17 +52,19 @@ rsync_interactive_overwrite() {
     local include_only_dirs="$2"
     local in_dir="$1"
 
-    log "INFO" "Checking for existing files in ${local_dir}"
-
     # Apply include/exclude only if we’re focusing on directories
     if [[ "$include_only_dirs" == "true" ]]; then
-        rsync_opts=("--include=*/" "--exclude=*")
+        rsync_opts=(
+          "--include=*/"
+          "--include=*"
+          "--exclude=*/*"
+        )
     else
         rsync_opts=()
     fi
 
     # Dry-run rsync to detect files that will be overwritten
-    existing_files=$(rsync "${rsync_opts[@]}" -ain --existing "$in_dir/" "${local_dir}/" | grep "^>f" | awk '{print $2}')
+    existing_files=$(rsync "${rsync_opts[@]}" -ain --existing "${in_dir}/" "${local_dir}/" | grep "^>f" | awk '{print $2}')
 
     if [[ -n "$existing_files" ]]; then
         echo "The following files already exist in ~/.local and the package being installed has different contents:"
@@ -75,7 +77,7 @@ rsync_interactive_overwrite() {
                     for file in $existing_files; do
                         read -rp "Overwrite $file? (y/N): " overwrite
                         if [[ "$overwrite" =~ ^[Yy]$ ]]; then
-                            mv "$in_dir/${file}" "${local_dir}/${file}" || return 1
+                            mv "${in_dir}/${file}" "${local_dir}/${file}" || return 1
                             log "INFO" "Overwrote ${file}"
                         else
                             log "INFO" "Skipped ${file}"
@@ -84,15 +86,16 @@ rsync_interactive_overwrite() {
                     ;;
                 [Aa])
                     log "INFO" "Overwriting all files without confirmation..."
-                    rsync -a "${rsync_opts[@]}" "$in_dir/" "${local_dir}/" || return 1
+                    rsync -a --info=progress2 "${rsync_opts[@]}" "${in_dir}/" "${local_dir}/" || return 1
                     ;;
                 *)
                     log "INFO" "Skipping all overwrites. Only new files will be copied."
-                    rsync -a --ignore-existing "${rsync_opts[@]}" "$in_dir/" "${local_dir}/" || return 1
+                    rsync -a --info=progress2 --ignore-existing "${rsync_opts[@]}" "${in_dir}/" "${local_dir}/" || return 1
                     ;;
             esac
     else
-        rsync -a "${rsync_opts[@]}" "$in_dir/" "${local_dir}/" || return 1
+        log "INFO" "No files to be overwritten, merging..."
+        rsync -a --info=progress2 "${rsync_opts[@]}" "${in_dir}/" "${local_dir}/" || return 1
     fi
 }
 
@@ -100,7 +103,7 @@ rsync_interactive_overwrite() {
 log "INFO" "Downloading $1..."
 echo ""
 curl -L -# -o "${temp_tar_name}" "$1" || fail "curl failed to download"
-echo ""
+echo "Downloaded. Extracting..."
 
 # Extract into temp dir
 mkdir -p "${temp_name}"
@@ -123,11 +126,11 @@ if [[ -n "$nearest_bin_dir" ]]; then
     confirm_continue
 
     rsync_interactive_overwrite "$nearest_bin_dir" "true" || fail "Failed to merge files"
-
+    log "INFO" "Top-level directories moved to ~/.local."
 else
-    log "INFO" "No bin directory found, checking for executables in root..."
+    log "INFO" "No bin directory found, checking for executables..."
     
-    executables=$(find "${temp_name}" -maxdepth 1 -type f -executable)
+    executables=$(find "${temp_name}" -type f -executable)
 
     if [[ -n "${executables}" ]]; then
         echo ""
