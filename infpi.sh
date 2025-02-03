@@ -49,7 +49,8 @@ confirm_continue() {
 }
 
 rsync_interactive_overwrite() {
-    local include_only_dirs="$1"
+    local include_only_dirs="$2"
+    local in_dir="$1"
 
     log "INFO" "Checking for existing files in ${local_dir}"
 
@@ -61,7 +62,7 @@ rsync_interactive_overwrite() {
     fi
 
     # Dry-run rsync to detect files that will be overwritten
-    existing_files=$(rsync "${rsync_opts[@]}" -ain --existing "${temp_name}/" "${local_dir}/" | grep "^>f" | awk '{print $2}')
+    existing_files=$(rsync "${rsync_opts[@]}" -ain --existing "$in_dir/" "${local_dir}/" | grep "^>f" | awk '{print $2}')
 
     if [[ -n "$existing_files" ]]; then
         echo "The following files already exist in ~/.local and the package being installed has different contents:"
@@ -74,7 +75,7 @@ rsync_interactive_overwrite() {
                     for file in $existing_files; do
                         read -rp "Overwrite $file? (y/N): " overwrite
                         if [[ "$overwrite" =~ ^[Yy]$ ]]; then
-                            mv "${temp_name}/${file}" "${local_dir}/${file}" || return 1
+                            mv "$in_dir/${file}" "${local_dir}/${file}" || return 1
                             log "INFO" "Overwrote ${file}"
                         else
                             log "INFO" "Skipped ${file}"
@@ -83,15 +84,15 @@ rsync_interactive_overwrite() {
                     ;;
                 [Aa])
                     log "INFO" "Overwriting all files without confirmation..."
-                    rsync -a "${rsync_opts[@]}" "${temp_name}/" "${local_dir}/" || return 1
+                    rsync -a "${rsync_opts[@]}" "$in_dir/" "${local_dir}/" || return 1
                     ;;
                 *)
                     log "INFO" "Skipping all overwrites. Only new files will be copied."
-                    rsync -a --ignore-existing "${rsync_opts[@]}" "${temp_name}/" "${local_dir}/" || return 1
+                    rsync -a --ignore-existing "${rsync_opts[@]}" "$in_dir/" "${local_dir}/" || return 1
                     ;;
             esac
     else
-        rsync -a "${rsync_opts[@]}" "${temp_name}/" "${local_dir}/" || return 1
+        rsync -a "${rsync_opts[@]}" "$in_dir/" "${local_dir}/" || return 1
     fi
 }
 
@@ -114,7 +115,16 @@ echo ""
 nearest_bin_dir=$(find "${temp_name}" -type d -name bin | head -n 1 | sed 's:/bin$::')
 
 # If no bin dir is found, look for executables in the root
-if [[ -z "$nearest_bin_dir" ]]; then
+if [[ -n "$nearest_bin_dir" ]]; then
+    tree "$nearest_bin_dir"
+    echo ""
+    # TODO: Allow moving all files, not just directories.
+    echo "-- A bin directory was found. The DIRECTORIES listed above will be moved to ~/.local."
+    confirm_continue
+
+    rsync_interactive_overwrite "$nearest_bin_dir" "true" || fail "Failed to merge files"
+
+else
     log "INFO" "No bin directory found, checking for executables in root..."
     
     executables=$(find "${temp_name}" -maxdepth 1 -type f -executable)
@@ -153,14 +163,15 @@ if [[ -z "$nearest_bin_dir" ]]; then
                 1)
                     # Only move directories
                     log "INFO" "Moving remaining directories, excluding top-level files, to ~/.local"
-                    rsync_interactive_overwrite "true" || fail "Failed to merge files"
+                    rsync_interactive_overwrite "$temp_name" "true" || fail "Failed to merge files"
                     cleanup
                     log "SUCCESS" "Installation complete, copied executables and directories excluding top-level files"
                     exit 0
                     ;;
                 2)
                     # Continue like normal, move all the rest
-                    break
+                    log "INFO" "Moving all files to ${local_dir}..."
+                    rsync_interactive_overwrite "$temp_name" || fail "Failed to merge files"
                     ;;
                 3)
                     # Exit so we don't continue copying
@@ -183,13 +194,6 @@ if [[ -z "$nearest_bin_dir" ]]; then
         fail "No bin directory or executables found in archive: $1"
     fi
 fi
-
-echo "-- The files listed above will be moved to ~/.local."
-confirm_continue
-
-log "INFO" "Moving all files to ${local_dir}..."
-
-rsync_interactive_overwrite || fail "Failed to merge files"
 
 cleanup
 log "SUCCESS" "Installation complete from $1"
