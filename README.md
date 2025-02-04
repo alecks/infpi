@@ -2,6 +2,8 @@
 
 `infpi` is a script for the University of Edinburgh's [DICE](https://computing.help.inf.ed.ac.uk/what-is-dice) system that makes installing programs from a tarball easier. The `pi` stands for 'program installer' rather than 'package manager' because it doesn't manage versioning, dependencies, uninstallation of programs, or anything really other than installation. 
 
+It can currently install programs from a tarball, support for `.deb` isn't implemented yet.
+
 ## Installation
 
 This command creates your `~/.local` directory where per-user programs are stored, installs infpi to that directory and makes it executable.
@@ -17,7 +19,13 @@ DICE seems to have a [setpath](https://computing.help.inf.ed.ac.uk/FAQ/how-do-i-
 Add the following to your `~/.brc` if you use bash, the default shell for DICE, or `~/.zshrc` if you use zsh:
 
 ```sh
-PATH=$HOME/.local/bin:$PATH
+export PATH="$HOME/.local/bin:$PATH"
+```
+
+If you wish to install libraries with infpi, you also want to update your `LD_LIBRARY_PATH`:
+
+```sh
+export LD_LIBRARY_PATH="$HOME/.local/lib:$LD_LIBRARY_PATH"
 ```
 
 This allows you to call programs directly like `my-program` rather than `~/.local/bin/my-program`.
@@ -41,7 +49,11 @@ infpi https://github.com/neovim/neovim/releases/latest/download/nvim-linux-x86_6
 ```
 #### Package structure
 
+<<<<<<< HEAD
 The script expects the archive to have at least a `bin` directory or at least one executable in the root. In the case that there is a bin directory, all top-level directories in the archive (e.g. bin, lib, share) are copied into your `~/.local` folder. If there isn't, and root executable(s) are found, they are moved to the `~/.local/bin` directory and you will be asked about the rest. 
+=======
+The script expects the archive to have at least a `bin` or `lib` directory or at least one executable. In the case that there is a bin or lib directory, all directories in the archive is copied into your `~/.local` folder. If there isn't, and executable(s) are found, they are moved to the `~/.local/bin` directory and you will be asked about the rest. 
+>>>>>>> 3f6a7c3 (further clarify readme for lib etc)
 
 #### Overwrites
 
