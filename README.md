@@ -49,11 +49,7 @@ infpi https://github.com/neovim/neovim/releases/latest/download/nvim-linux-x86_6
 ```
 #### Package structure
 
-<<<<<<< HEAD
-The script expects the archive to have at least a `bin` directory or at least one executable in the root. In the case that there is a bin directory, all top-level directories in the archive (e.g. bin, lib, share) are copied into your `~/.local` folder. If there isn't, and root executable(s) are found, they are moved to the `~/.local/bin` directory and you will be asked about the rest. 
-=======
 The script expects the archive to have at least a `bin` or `lib` directory or at least one executable. In the case that there is a bin or lib directory, all directories in the archive is copied into your `~/.local` folder. If there isn't, and executable(s) are found, they are moved to the `~/.local/bin` directory and you will be asked about the rest. 
->>>>>>> 3f6a7c3 (further clarify readme for lib etc)
 
 #### Overwrites
 
