@@ -122,6 +122,7 @@ dirtree "$temp_name" | tee -a "${log_file}"
 echo ""
 
 # Find the shallowest bin directory
+# TODO: do this for lib dir
 nearest_bin_dir=$(find "${temp_name}" -type d -name bin | head -n 1 | sed 's:/bin$::')
 
 if [[ -n "$nearest_bin_dir" ]]; then
