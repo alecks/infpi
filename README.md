@@ -2,7 +2,10 @@
 
 `infpi` is a script for the University of Edinburgh's [DICE](https://computing.help.inf.ed.ac.uk/what-is-dice) system that makes installing programs from a tarball easier. The `pi` stands for 'program installer' rather than 'package manager' because it doesn't manage versioning, dependencies, uninstallation of programs, or anything really other than installation. 
 
-It can currently install programs from a tarball, support for `.deb` isn't implemented yet.
+### TODO
+
+- [ ] search for lib dir as well as bin dir
+- [ ] allow installing from `.deb`, ideally by searching the package lists 
 
 ## Installation
 
@@ -49,7 +52,7 @@ infpi https://github.com/neovim/neovim/releases/latest/download/nvim-linux-x86_6
 ```
 #### Package structure
 
-The script expects the archive to have at least a `bin` or `lib` directory or at least one executable. In the case that there is a bin or lib directory, all directories in the archive is copied into your `~/.local` folder. If there isn't, and executable(s) are found, they are moved to the `~/.local/bin` directory and you will be asked about the rest. 
+The script expects the archive to have at least a `bin` directory or at least one executable. In the case that there is a bin directory, all directories in the archive is copied into your `~/.local` folder. If there isn't, and executable(s) are found, they are moved to the `~/.local/bin` directory and you will be asked about the rest. 
 
 #### Overwrites
 
